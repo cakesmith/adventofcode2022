@@ -12,6 +12,19 @@ weight = n => {
     return code - 96;
 }
 
+letter = k => {
+    if(!Number.isInteger(k)) {
+        return k;
+    }
+    if(k === 0) {
+        return String.fromCharCode(83);  // S
+    }
+    if(k === 27) {
+        return String.fromCharCode(69);  // E
+    }
+    return String.fromCharCode(k + 96);
+}
+
 model = input => input
     .split('\n')
     .map(n => n
@@ -78,52 +91,94 @@ validMove = data => (from, direction) => {
     return nextCoords;
 }
 
+// manhattan = (x,y) => Math.abs(x[0] - x[1]) + Math.abs(y[0] - y[1])
+
 search = grid => {
     // Breadth first search
     const move = validMove(grid);
+
     const home = findCoordinate(0, grid)
+
     const queue = [{
         location: home,
-        path: [],
-        visited: {}
+        path: []
     }];
 
+    const visited = {};
+
+    let iterations = 0;
+
     while(queue.length > 0) {
+        iterations++;
 
         const {
             location,
             path,
-            visited
         } = queue.shift();
 
+        if (value(location, grid) === 27) {
+            console.log(`iterations: ${iterations}`);
+            return path;
+        }
+
+        const priority = [];
+
         for(const direction of ["up", "down", "left", "right"]) {
-
             const nextCoords = move(location, direction);
-
-            if(nextCoords) {
-
-                if (value(nextCoords, grid) === 27) {
-                    return [...path, direction];
-                }
-
-                if (!visited[nextCoords]) {
-                    visited[nextCoords] = true;
-                    queue.push({
-                        visited,
-                        location: nextCoords,
-                        path: [...path, direction]
-                    });
-                }
+            if(nextCoords && !visited[nextCoords]) {
+                visited[nextCoords] = true;
+                priority.push({
+                    location: nextCoords,
+                    path: [...path, direction]
+                });
             }
         }
+
+        priority
+            .sort((a, b) => value(b.location, grid) - value(a.location, grid))
+            .forEach(p => queue.push(p));
+
     }
     return false;
 }
 
-solution_real = search(model(input_real));
-// solution_demo = search(model(input_demo));
+function overlayPathFromStartingCoordinate (coord, path, grid) {
+    const move = validMove(grid);
+    if(path.length === 0) {
+        return grid;
+    }
+    const direction = path.shift();
+    let symbol = '>';
+    switch(direction) {
+        case "up":
+            symbol = '^';
+            break;
+        case "down":
+            symbol = 'v';
+            break;
+        case "left":
+            symbol = "<";
+            break;
+        default:
+    }
 
-console.log(solution_real, solution_real.length)
-// console.log(solution_demo, solution_demo.length)
+    grid[coord[0]][coord[1]] = symbol;
+    coord = move(coord, direction);
+
+    if(!coord) {
+        throw new Error("Invalid move")
+    }
+
+    return overlayPathFromStartingCoordinate(coord, path, grid)
+}
+
+data = (model(input_real))
+
+solution = search(data);
+
+console.log(solution, solution.length)
+
+overlay = overlayPathFromStartingCoordinate(findCoordinate(0, data), solution, data);
+console.log(overlay.map(o => o.map(c => letter(c)).join('')).join('\n'));
 
 
