@@ -35,6 +35,7 @@ function* tokenize(input) {
 
 const model = input => {
     const generator = tokenize(input);
+
     let value = '';
     let done = false;
 
@@ -89,16 +90,23 @@ const model = input => {
         expect(/:/)
         expect(/\s/)
         const startingItems = list();
-        console.log(`Monkey id: [ ${id} ]`);
-        console.log(`Starting items: [ ${startingItems} ]`);
+        done = true;
+        return {
+            id,
+            startingItems
+        }
     }
 
 
     next();
-    Monkey();
 
+    const monkeys = []
 
-    return [];
+    while(!done) {
+        monkeys.push(Monkey());
+    }
+
+    return monkeys;
 }
 
 const data = model(input_demo)
